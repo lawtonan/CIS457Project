@@ -61,16 +61,43 @@ int main (int argc, char** argv) {
 	std::size_t filesize = std::ftell(myfile);
 	rewind(myfile);
 
+	// current spot that were at when reading / transfering the file
 	long int currentsize =0;
 	char line[5000];
+	//total packets sent
 	int packetcount = 1;
-	while(currentsize < filesize){
-		std::size_t read = fread(line, 1, 1024, myfile);
-		sendto(sockfd,line,read,0,(struct sockaddr*)&clientaddr,sizeof(clientaddr));
-		currentsize += read;
-		//std::cout << "Packets Sent: " << packetcount << "\n";
-		std::cout << "Current Size: " << currentsize << " file size: " << filesize << " Read: " << read << "\n";
-		packetcount++;
+	//Packets currently in transition
+	int sendingPackets = 0;
+	//recieve is set as -1 as recv returns -1 on error so i start off by setting it as error as nothing was read in
+	int recieve = -1;
+	//intended for this to be the packet number that the client confirms that it recieved
+	char pcount[100];
+
+	//while there are still packets out, or theres more of the file to go continue
+	while(currentsize < filesize || sendingPackets > 0){
+		//if theres less than 5 packets out send a packet
+		//i added currentsize < filesize to make sure we dont try to send an extra packet might be redundant
+		while(currentsize < filesize && sendingPackets < 5){
+		
+			std::size_t read = fread(line, 1, 1024, myfile);
+			sendto(sockfd,line,read,0,(struct sockaddr*)&clientaddr,sizeof(clientaddr));
+			currentsize += read;
+
+			//std::cout << "Packets Sent: " << packetcount << "\n";
+			std::cout << "Current Size: " << currentsize << " file size: " << filesize << " Read: " << read << " Packets out: " << sendingPackets << "\n";
+			packetcount++;
+			sendingPackets++;
+		}
+		
+
+		recieve = recvfrom(sockfd,pcount,100,0,(struct sockaddr*)&clientaddr,&len);
+		if(recieve != -1){
+			std::cout << "Packets recieved by client " << pcount << " Packets out: " << sendingPackets << "\n";
+			//packs out goes down by one 
+			sendingPackets--;
+			recieve = -1;
+		}
+
 	}
       //sendto(sockfd,file,strlen(file)+1,0,(struct sockaddr*)&clientaddr,sizeof(clientaddr));
     }

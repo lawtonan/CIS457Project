@@ -6,6 +6,7 @@
 #include <unistd.h>
 #include <iostream>
 #include <string>
+#include <cstdlib>
 
 int main(int argc, char** argv) {
   int sockfd = socket(AF_INET, SOCK_DGRAM, 0);
@@ -40,11 +41,19 @@ int main(int argc, char** argv) {
   // recvfrom(sockfd, line2, 5000, 0, (struct sockaddr*)&serveraddr,(socklen_t*)&len);
 
   	int packets = 1;
+	char pcount[100];
+	//fully redundant just wanted something in pcount
+	std::cout << "Enter a word: " ;
+	std::cin >> pcount;
 	while(1){
 		recvfrom(sockfd,line2,1024,0,(struct sockaddr*)&serveraddr,(socklen_t*)&len);
 		std::cout << "Packets recieved: " << packets << "\n";
-		packets++;	
-
+		packets++;
+		// want to send the number of the packet recieved back to the server
+//		pcount = string(itoa(packets));
+		// send a message to server saying the the packet was recieved
+		sendto(sockfd,pcount,strlen(pcount)+1,0,(struct sockaddr*)&serveraddr,sizeof(serveraddr));	
+		
 	}
 
 
