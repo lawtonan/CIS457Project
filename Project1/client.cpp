@@ -7,6 +7,7 @@
 #include <iostream>
 #include <string>
 #include <cstdlib>
+#include <fstream>
 
 int main(int argc, char** argv) {
   int sockfd = socket(AF_INET, SOCK_DGRAM, 0);
@@ -28,12 +29,28 @@ int main(int argc, char** argv) {
   serveraddr.sin_addr.s_addr= inet_addr(ipAddress);
 
   char line[5000];
+  char fout[5000];
   //std::string input;
-  std::cout << "Enter a file: ";
+  std::cout << "Enter a file to copy: ";
   std::cin.ignore();
   std::cin.getline(line,5000);
+  std::cout << "Enter a file to write to: ";
+  std::cin.ignore();
+  std::cin.getline(fout,5000);
   //strcpy(line, input.c_str());
 
+
+  //std::ofstream myfile;
+  //myfile.open(fout);
+  //if(myfile.fail()){
+//	  std::cout << "Error opening file";
+//	  return 1;
+//  }
+
+	std::FILE* myfile = std::fopen(fout,"w");
+	if(myfile == NULL){
+		return 1;
+	}
 
   char line2[1024];
   int len = sizeof(serveraddr);
@@ -41,12 +58,23 @@ int main(int argc, char** argv) {
   // recvfrom(sockfd, line2, 5000, 0, (struct sockaddr*)&serveraddr,(socklen_t*)&len);
 
   	int packets = 1;
+	int recieve = -1;
 	char pcount[100];
+	int pos;
 	//fully redundant just wanted something in pcount
 	std::cout << "Enter a word: " ;
 	std::cin >> pcount;
 	while(1){
-		recvfrom(sockfd,line2,1024,0,(struct sockaddr*)&serveraddr,(socklen_t*)&len);
+		
+		recieve = recvfrom(sockfd,line2,1024,0,(struct sockaddr*)&serveraddr,(socklen_t*)&len);
+
+		if(recieve != -1){
+		//	pos = strlen(line2) - 1;
+		//	line2[pos] = '\0';
+			fwrite(line2,sizeof(char),sizeof(line2),myfile);
+			//myfile << line2;
+		}			
+
 		std::cout << "Packets recieved: " << packets << "\n";
 		packets++;
 		// want to send the number of the packet recieved back to the server

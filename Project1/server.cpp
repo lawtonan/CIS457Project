@@ -72,14 +72,20 @@ int main (int argc, char** argv) {
 	int recieve = -1;
 	//intended for this to be the packet number that the client confirms that it recieved
 	char pcount[100];
-
+	int extra;
+	std::size_t read;
 	//while there are still packets out, or theres more of the file to go continue
 	while(currentsize < filesize || sendingPackets > 0){
 		//if theres less than 5 packets out send a packet
 		//i added currentsize < filesize to make sure we dont try to send an extra packet might be redundant
 		while(currentsize < filesize && sendingPackets < 5){
 		
-			std::size_t read = fread(line, 1, 1024, myfile);
+			if(filesize - 1024 >= currentsize){
+				read = fread(line, 1, 1024, myfile);
+			}else{
+				extra = filesize - currentsize;
+				read = fread(line, 1, extra ,myfile);
+			}
 			sendto(sockfd,line,read,0,(struct sockaddr*)&clientaddr,sizeof(clientaddr));
 			currentsize += read;
 
