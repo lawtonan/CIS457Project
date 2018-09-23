@@ -35,7 +35,7 @@ int main(int argc, char** argv) {
   std::cin.ignore();
   std::cin.getline(line,5000);
   std::cout << "Enter a file to write to: ";
-  std::cin.ignore();
+ // std::cin.ignore();
   std::cin.getline(fout,5000);
   //strcpy(line, input.c_str());
 
@@ -58,21 +58,26 @@ int main(int argc, char** argv) {
   // recvfrom(sockfd, line2, 5000, 0, (struct sockaddr*)&serveraddr,(socklen_t*)&len);
 
   	int packets = 1;
-	int recieve = -1;
+	int recieve = 1024;
 	char pcount[100];
 	int pos;
+	std::size_t fw;
 	//fully redundant just wanted something in pcount
 	std::cout << "Enter a word: " ;
 	std::cin >> pcount;
-	while(1){
+	while(recieve == 1024){
 		
 		recieve = recvfrom(sockfd,line2,1024,0,(struct sockaddr*)&serveraddr,(socklen_t*)&len);
-
+		std::cout << "recieve = " << recieve << "\n";
 		if(recieve != -1){
 		//	pos = strlen(line2) - 1;
-		//	line2[pos] = '\0';
-			fwrite(line2,sizeof(char),sizeof(line2),myfile);
+			if(recieve != 1024){
+				line2[recieve-1] = '\n';
+				line2[recieve] = '\0';
+			}
+		        fw = fwrite(line2,sizeof(char),recieve,myfile);
 			//myfile << line2;
+			std::cout << "fw = " << fw << "line2: " << line2 << "\n";
 		}			
 
 		std::cout << "Packets recieved: " << packets << "\n";
@@ -83,6 +88,8 @@ int main(int argc, char** argv) {
 		sendto(sockfd,pcount,strlen(pcount)+1,0,(struct sockaddr*)&serveraddr,sizeof(serveraddr));	
 		
 	}
+
+	fclose(myfile);
 
 
   //std::cout << "Server returned: " << line2 << "\n";
