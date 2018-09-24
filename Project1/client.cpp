@@ -68,8 +68,7 @@ int main(int argc, char** argv) {
         if(recieve != -1){
             //	pos = strlen(line2) - 1;
             if(recieve != 1024){
-                line2[recieve-1] = '\n';
-                line2[recieve] = '\0';
+                line2[recieve] = EOF;
             }
             fw = fwrite(line2,sizeof(char),recieve,myfile);
         }			
