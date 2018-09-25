@@ -26,18 +26,16 @@ int main (int argc, char** argv) {
     std::cout << "Input a port number: ";
     std::cin >> port;
     
+	if(port < 0 || port > 65535){
+		std::cout << "Bad Port Number\n";
+		exit(1);
+	}
+
     struct sockaddr_in serveraddr, clientaddr;
     serveraddr.sin_family=AF_INET;
     serveraddr.sin_port=htons(port);
     serveraddr.sin_addr.s_addr=INADDR_ANY;
-    
-    int b = bind(sockfd, (struct sockaddr*)&serveraddr, sizeof(serveraddr));
-    
-    if(b<0) {
-        std::cout << "Bind error\n";
-        return 3;
-    }
-    
+      
     while(1) {
         socklen_t len = sizeof(clientaddr);
         char file[5000];

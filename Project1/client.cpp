@@ -20,13 +20,24 @@ int main(int argc, char** argv) {
     int port;
     std::cout << "Enter an IP address: ";
     std::cin >> ipAddress;
+
     std::cout << "Enter a Port number: ";
     std::cin >> port;
+
+	if(port < 0 || port > 65535){
+		std::cout << "Bad Port Number\n";
+		exit(1);
+	}
 
     struct sockaddr_in serveraddr;
     serveraddr.sin_family = AF_INET;
     serveraddr.sin_port = htons(port);
     serveraddr.sin_addr.s_addr= inet_addr(ipAddress);
+
+	if(!inet_pton(AF_INET,ipAddress,&serveraddr.sin_addr)){
+		std::cout << "Bad Address\n";
+		exit(1);
+	}
 
     char line[5000];
     char fout[5000];
