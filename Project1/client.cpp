@@ -71,6 +71,10 @@ int main(int argc, char** argv) {
     char wait2[1025];
     char wait3[1025];
     char wait4[1025];
+	wait1[1] = '\0';
+	wait2[2] = '\0';
+	wait3[3] = '\0';
+	wait4[4] = '\0';
 
     while(1){
 
@@ -116,15 +120,15 @@ int main(int argc, char** argv) {
 			}
 	    	}
 
-		if(pcount[0] == nPacket){
-			while(wait1[0] != ' '){
+		if(atoi(pcount) == nPacket){
+			while(wait1[0] != '\0'){
 				fw = fwrite(wait1,sizeof(char),recieve-1,myfile);
 				for(int i = 0;i<1025;i++){
 					wait1[i] = wait2[i];
 					wait2[i] = wait3[i];
 					wait3[i] = wait4[i];
 				}
-				wait4[0] = ' ';
+				wait4[0] = '\0';
 
 				nPacket++;
 				if(nPacket == 10){
