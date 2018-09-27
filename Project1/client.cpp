@@ -54,7 +54,7 @@ int main(int argc, char** argv) {
         return 1;
     }
 
-    char line2[1024];
+    char line2[1025];
     int len = sizeof(serveraddr);
     sendto(sockfd,line,strlen(line)+1,0,(struct sockaddr*)&serveraddr,sizeof(serveraddr));
     // recvfrom(sockfd, line2, 5000, 0, (struct sockaddr*)&serveraddr,(socklen_t*)&len);
@@ -67,7 +67,9 @@ int main(int argc, char** argv) {
 
     while(1){
 
-        recieve = recvfrom(sockfd,line2,1024,0,(struct sockaddr*)&serveraddr,(socklen_t*)&len);
+        recieve = recvfrom(sockfd,line2,1025,0,(struct sockaddr*)&serveraddr,(socklen_t*)&len);
+        pcount[0] = line2[1024];
+        std::cout << "Packet Number: " << pcount[0] << "\n";
         if (strcmp(line2,"EOF") == 0) {
             std::cout << "End of file reached.\n";
             break;
@@ -81,7 +83,8 @@ int main(int argc, char** argv) {
             // if(recieve != 1024){
             //     line2[recieve] = EOF;
             // }
-            fw = fwrite(line2,sizeof(char),recieve,myfile);
+            std::cout << recieve-1 << "\n";
+            fw = fwrite(line2,sizeof(char),recieve-1,myfile);
         }
 
         std::cout << "Packets recieved: " << packets << "\n";

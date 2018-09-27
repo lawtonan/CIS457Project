@@ -6,6 +6,8 @@
 #include <unistd.h>
 #include <iostream>
 #include <fstream>
+#include <vector>
+
 
 
 int main (int argc, char** argv) {
@@ -35,6 +37,13 @@ int main (int argc, char** argv) {
     serveraddr.sin_family=AF_INET;
     serveraddr.sin_port=htons(port);
     serveraddr.sin_addr.s_addr=INADDR_ANY;
+    
+    int b = bind(sockfd, (struct sockaddr*)&serveraddr, sizeof(serveraddr));
+    
+    if (b < 0) {
+        std::cout << "Bind error\n";
+        return 3;
+    }
       
     while(1) {
         socklen_t len = sizeof(clientaddr);
@@ -74,6 +83,9 @@ int main (int argc, char** argv) {
             char pcount[100];
             int extra;
             std::size_t read;
+            char header[10] = {'0','1','2','3','4','5','6','7','8','9'};
+            int pNum = 0;
+            std::vector<char> array;
             //while there are still packets out, or theres more of the file to go continue
             while(currentsize < filesize || sendingPackets > 0){
                 //if theres less than 5 packets out send a packet
@@ -82,24 +94,43 @@ int main (int argc, char** argv) {
                     
                     if(filesize - 1024 >= currentsize){
                         read = fread(line, 1, 1024, myfile);
+                        array.push_back(header[pNum]);
                     }else{
                         extra = filesize - currentsize;
                         read = fread(line, 1, extra ,myfile);
+                        array.push_back(header[pNum]);
                     }
-                    sendto(sockfd,line,read,0,(struct sockaddr*)&clientaddr,sizeof(clientaddr));
+                    line[1024] = header[pNum];
+                    sendto(sockfd,line,read+1,0,(struct sockaddr*)&clientaddr,sizeof(clientaddr));
+                    
+                    pNum++;
+                    if (pNum == 10) {
+                        pNum = 0;
+                    }
+
                     currentsize += read;
                     
                     //std::cout << "Packets Sent: " << packetcount << "\n";
-                    std::cout << "Total packets out: " << packetcount << "\n";
+                    std::cout << "Total packets out: " << packetcount << "pNum=" << pNum << "\n";
                     packetcount++;
                     sendingPackets++;
                 }
                 
                 
                 recieve = recvfrom(sockfd,pcount,100,0,(struct sockaddr*)&clientaddr,&len);
-                if(recieve != -1){
-                    std::cout << "Packet recieved by client. Packets currently out: " << sendingPackets << "\n";
-                    //packs out goes down by one 
+                for (int i = 0; i < 5; i++) {
+                    if (array[i] == pcount[0]) { //first bit
+                        array[i] = ' ';
+                    }
+                }
+                if(recieve != -1 && array[0] == ' ') {
+                    std::cout << "Packet recieved by client:" << pcount[0] << " Packets currently out: " << sendingPackets << "\n";
+                    //packs out goes down by one
+                    for (int j = 0; j < array.size()-1; j++) {
+                        array[j] = array[j+1];
+                    }
+                    std::cout << array[0] << array[1] << array[2] << array[3]<< array[4];
+                    array.resize(array.size()-1); //FIX ME 
                     sendingPackets--;
                     recieve = -1;
                 }
