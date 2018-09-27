@@ -8,6 +8,7 @@
 #include <string>
 #include <cstdlib>
 #include <fstream>
+#include <cmath>
 
 int main(int argc, char** argv) {
     int sockfd = socket(AF_INET, SOCK_DGRAM, 0);
@@ -65,10 +66,16 @@ int main(int argc, char** argv) {
     int pos;
     std::size_t fw;
 
+    int nPacket = 0;
+    char wait1[1025];
+    char wait2[1025];
+    char wait3[1025];
+    char wait4[1025];
+
     while(1){
 
         recieve = recvfrom(sockfd,line2,1025,0,(struct sockaddr*)&serveraddr,(socklen_t*)&len);
-        pcount[0] = line2[1024];
+        pcount[0] = line2[recieve - 1];
         std::cout << "Packet Number: " << pcount[0] << "\n";
         if (strcmp(line2,"EOF") == 0) {
             std::cout << "End of file reached.\n";
@@ -83,8 +90,48 @@ int main(int argc, char** argv) {
             // if(recieve != 1024){
             //     line2[recieve] = EOF;
             // }
-            std::cout << recieve-1 << "\n";
-            fw = fwrite(line2,sizeof(char),recieve-1,myfile);
+            //std::cout << recieve-1 << "\n";
+
+		if(atoi(pcount) == nPacket){
+            		fw = fwrite(line2,sizeof(char),recieve-1,myfile);
+			nPacket++;
+			if(nPacket == 10){
+				nPacket = 0;
+			}
+		}else if(std::abs(atoi(pcount)-nPacket) == 1 || std::abs(atoi(pcount)-(nPacket+10))==1){
+			for(int i = 0;i<recieve;i++){		
+				wait1[i] = pcount[i];
+			}
+	    	}else if(std::abs(atoi(pcount)-nPacket) == 2 || std::abs(atoi(pcount)-(nPacket+10))==2){
+			for(int i = 0;i<recieve;i++){		
+				wait2[i] = pcount[i];
+	    		}
+	    	}else if(std::abs(atoi(pcount)-nPacket) == 3 || std::abs(atoi(pcount)-(nPacket+10))==3){
+			for(int i = 0;i<recieve;i++){		
+				wait3[i] = pcount[i];
+			}
+	    	}else if(std::abs(atoi(pcount)-nPacket) == 4 || std::abs(atoi(pcount)-(nPacket+10))==4){
+			for(int i = 0;i<recieve;i++){
+				wait4[i] = pcount[i];
+			}
+	    	}
+
+		if(pcount[0] == nPacket){
+			while(wait1[0] != ' '){
+				fw = fwrite(wait1,sizeof(char),recieve-1,myfile);
+				for(int i = 0;i<1025;i++){
+					wait1[i] = wait2[i];
+					wait2[i] = wait3[i];
+					wait3[i] = wait4[i];
+				}
+				wait4[0] = ' ';
+
+				nPacket++;
+				if(nPacket == 10){
+					nPacket = 0;
+				}
+			}
+	    	}	
         }
 
         std::cout << "Packets recieved: " << packets << "\n";
