@@ -1,0 +1,12 @@
+Packet Loss:
+Server: If not pinged back, resend the packet
+Client: Does nothing, checks for duplicate packets.
+Packet Corruption:
+Server: Waits for ack, if not resend.
+Client: Client checks; client does not ping back.
+Packet Duplication:
+Server: Check for dupe ack, then ignore
+Client: If dupe data, send ack not store/ replace. 
+Packet Reordering:
+Server: Do not move window until leftmost ack is recived.
+Client: Hold data until order is fixed / Store unordered data based on previous recived data.
