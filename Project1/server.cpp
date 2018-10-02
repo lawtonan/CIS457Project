@@ -6,6 +6,8 @@
 #include <unistd.h>
 #include <iostream>
 #include <fstream>
+#include <vector>
+
 
 
 int main (int argc, char** argv) {
@@ -26,6 +28,11 @@ int main (int argc, char** argv) {
     std::cout << "Input a port number: ";
     std::cin >> port;
     
+    if(port < 0 || port > 65535){
+        std::cout << "Bad Port Number\n";
+        return 1;
+    }
+    
     struct sockaddr_in serveraddr, clientaddr;
     serveraddr.sin_family=AF_INET;
     serveraddr.sin_port=htons(port);
@@ -33,7 +40,7 @@ int main (int argc, char** argv) {
     
     int b = bind(sockfd, (struct sockaddr*)&serveraddr, sizeof(serveraddr));
     
-    if(b<0) {
+    if (b < 0) {
         std::cout << "Bind error\n";
         return 3;
     }
@@ -71,11 +78,21 @@ int main (int argc, char** argv) {
             //Packets currently in transition
             int sendingPackets = 0;
             //recieve is set as -1 as recv returns -1 on error so i start off by setting it as error as nothing was read in
-            int recieve = -1;
+            int recieve;
             //intended for this to be the packet number that the client confirms that it recieved
             char pcount[100];
             int extra;
             std::size_t read;
+            char header[10] = {'0','1','2','3','4','5','6','7','8','9'};
+            int pNum = 0;
+            std::vector<char> array;
+            
+            char keep1[1025];
+            char keep2[1025];
+            char keep3[1025];
+            char keep4[1025];
+            char keep5[1025];
+            
             //while there are still packets out, or theres more of the file to go continue
             while(currentsize < filesize || sendingPackets > 0){
                 //if theres less than 5 packets out send a packet
@@ -84,26 +101,90 @@ int main (int argc, char** argv) {
                     
                     if(filesize - 1024 >= currentsize){
                         read = fread(line, 1, 1024, myfile);
+                        array.push_back(header[pNum]);
                     }else{
                         extra = filesize - currentsize;
                         read = fread(line, 1, extra ,myfile);
+                        array.push_back(header[pNum]);
                     }
-                    sendto(sockfd,line,read,0,(struct sockaddr*)&clientaddr,sizeof(clientaddr));
-                    currentsize += read;
+                    line[read] = header[pNum];
+                    sendto(sockfd,line,read+1,0,(struct sockaddr*)&clientaddr,sizeof(clientaddr));
+                    std::cout << "\t JUST SENT: " << line[1024] << "\n";
+                    
+                    std::cout << "Total packets out: " << packetcount << "  pNum added =" << pNum << "  sendingPackets=" << sendingPackets << "  Last pcount " << pcount[0] << "\t" << array[0] << array[1] << array[2] << array[3]<< array[4] << "\n";
+                    
+                    if(recieve != -1){
+                        sendingPackets++;
+                        if(sendingPackets == 1){
+                            for(int i = 0;i<1025;i++){		
+                                keep1[i] = line[i];
+                            }		
+                        }else if(sendingPackets == 2){
+                            for(int i = 0;i<1025;i++){		
+                                keep2[i] = line[i];
+                            }
+                        }else if(sendingPackets == 3){
+                            for(int i = 0;i<1025;i++){		
+                                keep3[i] = line[i];
+                            }
+                        }else if(sendingPackets == 4){
+                            for(int i = 0;i<1025;i++){		
+                                keep4[i] = line[i];
+                            }
+                        }else if(sendingPackets == 5){
+                            for(int i = 0;i<1025;i++){		
+                                keep5[i] = line[i];
+                            }			
+                        }
+                        pNum++;
+                        if (pNum == 10) {
+                            pNum = 0;
+                        }
+                        currentsize += read;
+                        
+                    }
+                    
+                    
+                    
                     
                     //std::cout << "Packets Sent: " << packetcount << "\n";
-                    std::cout << "Total packets out: " << packetcount << "\n";
+                    
                     packetcount++;
-                    sendingPackets++;
+                    
                 }
                 
                 
                 recieve = recvfrom(sockfd,pcount,100,0,(struct sockaddr*)&clientaddr,&len);
-                if(recieve != -1){
-                    std::cout << "Packet recieved by client. Packets currently out: " << sendingPackets << "\n";
-                    //packs out goes down by one 
-                    sendingPackets--;
-                    recieve = -1;
+                std::cout << "\t\t JUST RECIEVED: " << pcount[0] << "\n"; 
+                for (int i = 0; i < sendingPackets; i++) {
+                    if (array[i] == pcount[0]) { //first bit
+                        array[i] = ' ';
+                    }
+                }
+                if(recieve == -1){
+                    std::cout << "Packet lost Resending packet\n" ;
+                    std::cout << "\t JUST SENT: " << keep1[1024] << "\n";
+                    sendto(sockfd,keep1,read+1,0,(struct sockaddr*)&clientaddr,sizeof(clientaddr));
+                }else {
+                    while(array[0] == ' '){
+                        //std::cout << "Packet recieved by client:" << pcount[0] << " Packets currently out: " << sendingPackets << "\n";
+                        //packs out goes down by one
+                        for (int j = 0; j < sendingPackets; j++) {
+                            array[j] = array[j+1];
+                        }
+                        std::cout << array[0] << array[1] << array[2] << array[3]<< array[4] << "\n";
+                        array.resize(array.size()-1); 
+                        
+                        for(int i = 0;i<1025;i++){
+                            keep1[i] = keep2[i];
+                            keep2[i] = keep3[i];
+                            keep3[i] = keep4[i];
+                            keep4[i] = keep5[i];
+                        }
+                        
+                        
+                        sendingPackets--;
+                    }
                 }
                 
             }
