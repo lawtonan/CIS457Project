@@ -19,7 +19,7 @@ int main (int argc, char** argv) {
     }
     
     struct timeval timeout;
-    timeout.tv_sec=5;
+    timeout.tv_sec=1;
     timeout.tv_usec=0;
     
     setsockopt(sockfd,SOL_SOCKET,SO_RCVTIMEO,&timeout,sizeof(timeout));
@@ -83,6 +83,7 @@ int main (int argc, char** argv) {
             char pcount[100];
             int extra;
             std::size_t read;
+		std::size_t standard;
             char header[10] = {'0','1','2','3','4','5','6','7','8','9'};
             int pNum = 0;
             std::vector<char> array;
@@ -107,9 +108,14 @@ int main (int argc, char** argv) {
                         read = fread(line, 1, extra ,myfile);
                         array.push_back(header[pNum]);
                     }
+
+			if(packetcount == 1){
+				standard = read;
+			}
+
                     line[read] = header[pNum];
                     sendto(sockfd,line,read+1,0,(struct sockaddr*)&clientaddr,sizeof(clientaddr));
-                    std::cout << "\t JUST SENT: " << line[1024] << "\n";
+                    std::cout << "\t JUST SENT: " << line[1024] << "\t size " << read << "\n";
                     
                     std::cout << "Total packets out: " << packetcount << "  pNum added =" << pNum << "  sendingPackets=" << sendingPackets << "  Last pcount " << pcount[0] << "\t" << array[0] << array[1] << array[2] << array[3]<< array[4] << "\n";
                     
@@ -163,8 +169,14 @@ int main (int argc, char** argv) {
                 }
                 if(recieve == -1){
                     std::cout << "Packet lost Resending packet\n" ;
-                    std::cout << "\t JUST SENT: " << keep1[1024] << "\n";
-                    sendto(sockfd,keep1,read+1,0,(struct sockaddr*)&clientaddr,sizeof(clientaddr));
+                    //std::cout << "\t JUST SENT: " << keep1[1024] << "\n";
+                    if(sendingPackets != 1){
+                    		sendto(sockfd,keep1,standard + 1,0,(struct sockaddr*)&clientaddr,sizeof(clientaddr));
+			std::cout << "\t JUST SENT: " << keep1[1024] << "\t size " << standard << "\n";
+			}else{
+				sendto(sockfd,keep1,read+1,0,(struct sockaddr*)&clientaddr,sizeof(clientaddr));
+			std::cout << "\t JUST SENT: " << keep1[1024] << "\t size " << read << "\n";
+			}
                 }else {
                     while(array[0] == ' '){
                         //std::cout << "Packet recieved by client:" << pcount[0] << " Packets currently out: " << sendingPackets << "\n";
