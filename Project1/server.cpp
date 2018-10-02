@@ -83,7 +83,7 @@ int main (int argc, char** argv) {
             char pcount[100];
             int extra;
             std::size_t read;
-		std::size_t standard;
+            std::size_t standard;
             char header[10] = {'0','1','2','3','4','5','6','7','8','9'};
             int pNum = 0;
             std::vector<char> array;
@@ -108,12 +108,14 @@ int main (int argc, char** argv) {
                         read = fread(line, 1, extra ,myfile);
                         array.push_back(header[pNum]);
                     }
-
-			if(packetcount == 1){
-				standard = read;
-			}
-
+                    
+                    if(packetcount == 1){
+                        standard = read;
+                    }
+                    
                     line[read] = header[pNum];
+                    // u_short check = cksum(*line, int filesize/16);
+                    // add check to line and send to client.
                     sendto(sockfd,line,read+1,0,(struct sockaddr*)&clientaddr,sizeof(clientaddr));
                     std::cout << "\t JUST SENT: " << line[1024] << "\t size " << read << "\n";
                     
@@ -149,16 +151,10 @@ int main (int argc, char** argv) {
                         currentsize += read;
                         
                     }
-                    
-                    
-                    
-                    
-                    //std::cout << "Packets Sent: " << packetcount << "\n";
-                    
+
                     packetcount++;
                     
                 }
-                
                 
                 recieve = recvfrom(sockfd,pcount,100,0,(struct sockaddr*)&clientaddr,&len);
                 std::cout << "\t\t JUST RECIEVED: " << pcount[0] << "\n"; 
@@ -169,18 +165,15 @@ int main (int argc, char** argv) {
                 }
                 if(recieve == -1){
                     std::cout << "Packet lost Resending packet\n" ;
-                    //std::cout << "\t JUST SENT: " << keep1[1024] << "\n";
                     if(sendingPackets != 1){
-                    		sendto(sockfd,keep1,standard + 1,0,(struct sockaddr*)&clientaddr,sizeof(clientaddr));
-			std::cout << "\t JUST SENT: " << keep1[1024] << "\t size " << standard << "\n";
-			}else{
-				sendto(sockfd,keep1,read+1,0,(struct sockaddr*)&clientaddr,sizeof(clientaddr));
-			std::cout << "\t JUST SENT: " << keep1[1024] << "\t size " << read << "\n";
-			}
+                        sendto(sockfd,keep1,standard + 1,0,(struct sockaddr*)&clientaddr,sizeof(clientaddr));
+                        std::cout << "\t JUST SENT: " << keep1[1024] << "\t size " << standard << "\n";
+                    }else{
+                        sendto(sockfd,keep1,read+1,0,(struct sockaddr*)&clientaddr,sizeof(clientaddr));
+                        std::cout << "\t JUST SENT: " << keep1[1024] << "\t size " << read << "\n";
+                    }
                 }else {
                     while(array[0] == ' '){
-                        //std::cout << "Packet recieved by client:" << pcount[0] << " Packets currently out: " << sendingPackets << "\n";
-                        //packs out goes down by one
                         for (int j = 0; j < sendingPackets; j++) {
                             array[j] = array[j+1];
                         }
@@ -206,3 +199,17 @@ int main (int argc, char** argv) {
     }
     return 0;
 }
+
+// u_short cksum(u_short *buf, int count) {
+//   register u_long sum = 0;
+//   while (count--) {
+//     sum += *buf++;
+//     if (sum & 0xFFFF0000) {
+//       /* carry occurred,
+//       so wrap around */
+//       sum &= 0xFFFF;
+//       sum++;
+//     }
+//   }
+//   return ˜(sum & 0xFFFF);
+// }
